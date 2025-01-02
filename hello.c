@@ -1,6 +1,6 @@
 /*
-gcc -o hello hello.c ctensor.c -lm
-./hello
+gcc -o bin/hello hello.c ctensor.c -lm
+./bin/hello
 */
 
 

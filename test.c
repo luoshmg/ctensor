@@ -1,6 +1,6 @@
 /*
-gcc -o test test.c ctensor.c -lm
-./test
+gcc -o bin/test test.c ctensor.c -lm
+./bin/test
 */
 
 // NOTE: 需要先把 model.txt 中的 '[' 和 ']' 去掉才能正确加载参数  # 20241231
