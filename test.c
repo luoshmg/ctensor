@@ -26,7 +26,7 @@ int main() {
 
 
     // load parameters
-    const char *save_model_file = "model.txt";
+    const char *save_model_file = "models/model.txt";
     FILE *fp = fopen(save_model_file, "r");
     if (!fp) {
         perror(FILE_OPEN_ERR);

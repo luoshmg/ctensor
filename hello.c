@@ -15,9 +15,9 @@ int main() {
     const int ndim_mat = 2;
 
     // hyper parameters
-    dtype lr = 0.005;                   // 0.001 太小了  # 20250102 10:00
-    int total_epoches = 5;
-    const int batch_size = 200;         // 注意: batch_size 不能小于3, 否则 batch normalization 没有意义
+    dtype lr = 0.01;                   // 0.001 太小了，用0.005  # 20250102 10:00       使用 batch_norm 应该增大 lr 吗？是的！0.005太小了，用 0.01   # 20250103 11:30
+    int total_epoches = 4;
+    const int batch_size = 300;         // 注意: batch_size 不能小于3, 否则 batch normalization 没有意义
 
     const int N_layer1 = 80;
 
@@ -84,10 +84,10 @@ int main() {
 
             // forward, backward, gradient descend
             fb_once(need_backward, lr, inputs, targets, W1, b1, W2, b2, &loss_return, &correct);
-            
+
             // print info
             end_time = time(NULL);
-            printf("epoch %d/%d, batch %d/%d, loss=%f, acc=%.3f, time consumming=%lfs \n", epoch + 1, total_epoches, batch + 1, num_batches, loss_return, correct / (float) batch_size, difftime(end_time, start_time));
+            printf("epoch %d/%d, batch %d/%d, loss=%f, acc=%.4f, time consumming=%lfs \n", epoch + 1, total_epoches, batch + 1, num_batches, loss_return, correct / (float) batch_size, difftime(end_time, start_time));
         }
     }
     free(imagepaths);
@@ -127,8 +127,7 @@ int main() {
         total_correct += correct;
     }
     free(test_imagepaths);
-    printf("test %d, correct %d, acc %lf\n", batch * batch_size, total_correct, total_correct / ((float) batch * batch_size));
-
+    printf("test %d, correct %d, acc %.4f\n", batch * batch_size, total_correct, total_correct / ((float) batch * batch_size));
 
     // ========================================================
 
@@ -137,7 +136,7 @@ int main() {
     free_tensor(targets);
 
     // save parameters
-    const char *save_model_file = "model.txt";
+    const char *save_model_file = "models/model.txt";
     sava_arr(save_model_file, W1->data);
     sava_arr(save_model_file, b1->data);
     sava_arr(save_model_file, W2->data);

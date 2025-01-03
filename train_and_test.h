@@ -20,29 +20,21 @@ int read_imagepaths_and_labels(const char *dataset_filename, char (*imagepaths)[
 void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tensor *W1, Tensor *b1, Tensor *W2, Tensor *b2, dtype *loss_return, int *correct);
 
 
-// MLP forward, (backward, gradient descend)
+// MLP forward, (backward and gradient descend if need_backward)
+// return loss and correct via loss_return and correct
 void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tensor *W1, Tensor *b1, Tensor *W2, Tensor *b2, dtype *loss_return, int *correct) {
     // 1. forward
     Tensor *x1 = matmultiply(inputs, W1);
     Tensor *x2 = matadd(x1, b1);
-    
-    // Tensor *x3 = batch_norm(x2, 0);      // 先去掉 batch_norm，反向传播还需要改正  # 20250102 01:30
-
+    Tensor *x3 = batch_norm(x2, 0);
     Tensor *x4 = relu(x2);
-
     Tensor *x5 = matmultiply(x4, W2);
     Tensor *x6 = matadd(x5, b2);
-
     Tensor *x7 = softmaxloss(x6, targets);
-
     Tensor *loss = mean_all(x7);
 
-    if (correct) {
-        *correct = argmax_match_count(x6, targets);
-    }
-    if (loss_return) {
-        *loss_return = loss->data->values[0];
-    }
+    if (correct != NULL) *correct = argmax_match_count(x6, targets);
+    if (loss_return != NULL) *loss_return = loss->data->values[0];
 
     // 2. backward
     if (need_backward) {
@@ -50,26 +42,19 @@ void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tenso
         set_grad_to_1s(loss);
 
         mean_all_backward(loss);
-
         softmaxloss_backward(x7);
-
         matadd_backward(x6);
         matmultiply_backward(x5);
-
         relu_backward(x4);
-
-        // batch_norm_backward(x3);      // 先去掉 batch_norm，反向传播还需要改正  # 20250102 01:30
-
+        batch_norm_backward(x3);
         matadd_backward(x2);
         matmultiply_backward(x1);
 
         // 3. gradient descend
-        if (lr != 0.0) {
-            gradient_descend(W1, lr);
-            gradient_descend(b1, lr);
-            gradient_descend(W2, lr);
-            gradient_descend(b2, lr);
-        }
+        gradient_descend(W1, lr);
+        gradient_descend(b1, lr);
+        gradient_descend(W2, lr);
+        gradient_descend(b2, lr);
 
         // 4. return the grad of parameters to 0, because of the "+=" mechanism in _backward
         set_grad_to_0s(W1);
@@ -80,10 +65,11 @@ void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tenso
 
     // free intermediate variables
     free_tensor(loss);
+    free_tensor(x7);
     free_tensor(x6);
     free_tensor(x5);
     free_tensor(x4);
-    // free_tensor(x3);
+    free_tensor(x3);
     free_tensor(x2);
     free_tensor(x1);
 }

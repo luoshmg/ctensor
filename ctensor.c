@@ -837,7 +837,7 @@ void batch_norm_backward(Tensor *out) {
         Arr *a_mean = mean_(a->data, axis);
         Arr *a_std_deviation = std_deviation_(a->data, axis);
         
-        // 计算 batch normalization 的输入矩阵的每一列的需要的 Jacobian 是不一样的！
+        // 计算 batch normalization 的输入矩阵的每一列所需要的 Jacobian 是不一样的！
         for (int k = 0; k < a->data->shape[1]; k++) {
             // Jacobian （n x n 的方阵）
             int n = a->data->shape[axis];
@@ -858,23 +858,21 @@ void batch_norm_backward(Tensor *out) {
                 }
             }
 
-            // TODO: 对 out 切片，取出第 k 列，然后用 Jacobian 去乘。  # 20250102 01:30
+            // 对 out->grad 切片，取出第 k 列，然后用 Jacobian 去乘。  # 20250102 01:30
+            Arr *out_grad_col_k = create_arr_col(out->grad->shape[0]);
+            for (int i = 0; i < out->grad->shape[0]; i++) {
+                out_grad_col_k->values[i] = out->grad->values[i * out->grad->shape[1] + k];
+            }
+            Arr *a_grad_col_k = matmultiply_(Jacobian, out_grad_col_k);
 
+            for (int i = 0; i < a->grad->shape[0]; i++) {
+                a->grad->values[i * a->grad->shape[1] + k] += a_grad_col_k->values[i];      // d/da_col_k += Jacobian_col_k * d/dout_col_k
+            }
+
+            free_arr(a_grad_col_k);
+            free_arr(out_grad_col_k);
             free_arr(Jacobian);
         }
-
-        // int j;
-        // int vector_root_pos;
-        // int n = a_std_deviation->size;
-        // for (int pos_mean = 0; pos_mean < n; pos_mean++) {
-        //     j = pos_mean % a->data->strides[axis];
-        //     vector_root_pos = (pos_mean - j) * a->data->shape[axis] + j;
-        //     for (int idx = 0; idx < a->data->shape[axis]; idx++) {
-        //         dtype out_tmp = out->data->values[pos_mean];
-        //         dtype std_tmp = a_std_deviation->values[pos_mean];
-        //         a->grad->values[vector_root_pos + idx * a->data->strides[axis]] += out->grad->values[pos_mean] * (n - 1) * (n - (out_tmp * std_tmp) * (out_tmp * std_tmp)) / (n * n * std_tmp);    // da += dout * (n- 1) * (n - (out * std_deviation)**n) / (n**2 * std_deviation)
-        //     }
-        // }
 
         free_arr(a_std_deviation);
         free_arr(a_mean);
