@@ -81,8 +81,8 @@ Arr *create_arr_col(int size) {
 // free memory
 void free_arr(Arr *arr) {
     free(arr->values);
-    free(arr->strides);
     free(arr->shape);
+    free(arr->strides);
     free(arr);
 }
 
@@ -103,6 +103,8 @@ Tensor *create_tensor_zeros(int *shape, int ndim) {
     tensor->the_generating_operator = NO_GENERATING_OPERATOR;
     tensor->num_generating_operands = 0;
     memset(tensor->generating_operands, 0, sizeof(tensor->generating_operands));
+    tensor->generation_idx = 0;
+    tensor->backward = NULL;
     return tensor;
 }
 
@@ -206,6 +208,15 @@ Tensor *matmultiply(Tensor *a, Tensor *b) {
     out->num_generating_operands = 2;
     out->generating_operands[0] = a;
     out->generating_operands[1] = b;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = matmultiply_backward;
     return out;
 }
 
@@ -277,6 +288,15 @@ Tensor *matadd(Tensor *a, Tensor *b) {
     out->num_generating_operands = 2;
     out->generating_operands[0] = a;
     out->generating_operands[1] = b;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = matadd_backward;
     return out;
 }
 
@@ -338,6 +358,15 @@ Tensor *matminus(Tensor *a, Tensor *b) {
     out->num_generating_operands = 2;
     out->generating_operands[0] = a;
     out->generating_operands[1] = b;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = matminus_backward;
     return out;
 }
 
@@ -387,6 +416,15 @@ Tensor *mattranspose(Tensor *a) {
     out->the_generating_operator = MATTRANSPOSE;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = mattranspose_backward;
     return out;
 }
 
@@ -431,6 +469,15 @@ Tensor *matnegate(Tensor *a) {
     out->the_generating_operator = MATNEGATE;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = matnegate_backward;
     return out;
 }
 
@@ -467,6 +514,15 @@ Tensor *softmax(Tensor *y) {
     // out->the_generating_operator = SOFTMAX;
     // out->num_generating_operands = 1;
     // out->generating_operands[0] = y;
+
+    // int last_generation_idx = 0;
+    // for (int i = 0; i < out->num_generating_operands; i++) {
+    //     if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+    //         last_generation_idx = out->generating_operands[i]->generation_idx;
+    //     }
+    // }
+    // out->generation_idx = last_generation_idx + 1;
+    // out->backward = 
     return out;
 }
 
@@ -514,6 +570,15 @@ Tensor *softmaxloss(Tensor *y, Tensor *label) {
     out->num_generating_operands = 2;
     out->generating_operands[0] = y;
     out->generating_operands[1] = label;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = softmaxloss_backward;
     return out;
 }
 
@@ -576,6 +641,15 @@ Tensor *relu(Tensor *a) {
     out->the_generating_operator = RELU;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = relu_backward;
     return out;
 }
 
@@ -614,6 +688,15 @@ Tensor *sum(Tensor *a, int axis) {
     out->the_generating_operator = SUM;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = sum_backward;
     return out;
 }
 
@@ -688,6 +771,15 @@ Tensor *sum_all(Tensor *a) {
     out->the_generating_operator = SUM_ALL;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = sum_all_backward;
     return out;
 }
 
@@ -725,6 +817,15 @@ Tensor *mean(Tensor *a, int axis) {
     out->the_generating_operator = MEAN;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = mean_backward;
     return out;
 }
 
@@ -776,9 +877,18 @@ Tensor *std_deviation(Tensor *a, int axis) {
     Tensor *out = create_tensor(out_tmp);
     free_arr(out_tmp);
 
-    out->the_generating_operator = STD_DEVIATION;
-    out->num_generating_operands = 0;
-    out->generating_operands[0] = a;
+    // out->the_generating_operator = STD_DEVIATION;
+    // out->num_generating_operands = 1;
+    // out->generating_operands[0] = a;
+
+    // int last_generation_idx = 0;
+    // for (int i = 0; i < out->num_generating_operands; i++) {
+    //     if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+    //         last_generation_idx = out->generating_operands[i]->generation_idx;
+    //     }
+    // }
+    // out->generation_idx = last_generation_idx + 1;
+    // out->backward = 
     return out;
 }
 
@@ -822,6 +932,15 @@ Tensor *batch_norm(Tensor *a, int axis) {
     out->the_generating_operator = BATCH_NORM;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = batch_norm_backward;
     return out;
 }
 
@@ -919,6 +1038,15 @@ Tensor *mean_all(Tensor *a) {
     out->the_generating_operator = MEAN_ALL;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = mean_all_backward;
     return out;
 }
 
@@ -996,6 +1124,15 @@ Tensor *max(Tensor *a, int axis) {
     out->the_generating_operator = MAX;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = max_backward;
     return out;
 }
 
@@ -1069,6 +1206,16 @@ Tensor *max_all(Tensor *a) {
     out->the_generating_operator = MAX_ALL;
     out->num_generating_operands = 1;
     out->generating_operands[0] = a;
+
+    int last_generation_idx = 0;
+    for (int i = 0; i < out->num_generating_operands; i++) {
+        if (out->generating_operands[i]->generation_idx > last_generation_idx) {
+            last_generation_idx = out->generating_operands[i]->generation_idx;
+        }
+    }
+    out->generation_idx = last_generation_idx + 1;
+    out->backward = max_all_backward;
+    return out;
 }
 
 void max_all_backward(Tensor *out) {

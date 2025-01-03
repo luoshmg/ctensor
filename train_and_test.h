@@ -33,22 +33,17 @@ void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tenso
     Tensor *x7 = softmaxloss(x6, targets);
     Tensor *loss = mean_all(x7);
 
-    if (correct != NULL) *correct = argmax_match_count(x6, targets);
-    if (loss_return != NULL) *loss_return = loss->data->values[0];
+    Tensor *inter_vars[] = {x1, x2, x3, x4, x5, x6, x7, loss};
+    int num_inter_vars =  sizeof(inter_vars) / sizeof(inter_vars[0]);
 
     // 2. backward
     if (need_backward) {
-        // dloss/dloss = 1
-        set_grad_to_1s(loss);
+        set_grad_to_1s(loss);       // take the derivative with respect to loss itself (dloss/dloss = 1). unless this was done in the loss function, but if so, step 4 can not go before calling backward().
 
-        mean_all_backward(loss);
-        softmaxloss_backward(x7);
-        matadd_backward(x6);
-        matmultiply_backward(x5);
-        relu_backward(x4);
-        batch_norm_backward(x3);
-        matadd_backward(x2);
-        matmultiply_backward(x1);
+        // TODO: 按照 generation_idx 排序 num_inter_vars, 再按相反的顺序 backward
+        for (int i = num_inter_vars - 1; i >= 0; i--) {
+            inter_vars[i]->backward(inter_vars[i]);
+        }
 
         // 3. gradient descend
         gradient_descend(W1, lr);
@@ -63,15 +58,13 @@ void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tenso
         set_grad_to_0s(b2);
     }
 
+    if (correct != NULL) *correct = argmax_match_count(x6, targets);
+    if (loss_return != NULL) *loss_return = loss->data->values[0];
+
     // free intermediate variables
-    free_tensor(loss);
-    free_tensor(x7);
-    free_tensor(x6);
-    free_tensor(x5);
-    free_tensor(x4);
-    free_tensor(x3);
-    free_tensor(x2);
-    free_tensor(x1);
+    for (int i = num_inter_vars - 1; i >= 0; i--) {
+        free_tensor(inter_vars[i]);
+    }
 }
 
 

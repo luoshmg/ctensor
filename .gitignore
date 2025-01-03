@@ -1,3 +1,4 @@
 check_tensor_operators.c
 .vscode/
 bin/
+models/

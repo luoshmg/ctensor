@@ -1,5 +1,4 @@
 // TODO:  # 20250102
-// 1. softmaxloss_backward()
 // 2. Layer "class" and backward "method" for auto-grad (ML framework)
 // 3. parallel computing for matrix, e.g. OpenMP
 // 4. save and load Tensor/Arr
@@ -56,6 +55,7 @@
 // Tensor data type
 // ============================================================================
 // NOTE: 不能只用 Tensor 不用 Arr, 否则不能指定该使用 Tensor 的 data 还是 grad 来做计算！  # 20241230 21:40
+// NOTE: 什么是自动反向传播？ --自动反向传播指的是，从inputs到loss之间的每个中间变量 x_i 包括loss，但不包括inputs）都要求导，但是我们希望求导的方式是一致的，都是 x_i->backward(x_i), 不用指定张量运算的类型. 这是可以做到的，只要有 generation_idx 来帮助指定求导的顺序就行  # 20250103 20:00
 
 typedef float dtype;
 
@@ -66,7 +66,6 @@ typedef struct Arr{
 
     int size;       // e.g. 2*3*4*5
     int *strides;   // e.g. {3*4*5, 4*5, 5, 1}
-    // int type;    // 不行！因为C语言没有type()函数
 } Arr;
 
 typedef struct Tensor {
@@ -78,9 +77,8 @@ typedef struct Tensor {
     struct Tensor *generating_operands[MAX_GENNERATING_OPERANDS];    // tensors used to generate this tensor
     int num_generating_operands;
 
-    // TODO:  # 20241225 00:30
-    // void (* backward)(); // 自动反向传播
-    // int layer_idx;       // 自动反向传播需要 layer_idx, 用于表示这个张量是第几层张量，定义为生成这个张量的所有张量的最大 layer_idx 再加 1
+    void (* backward)(struct Tensor *);
+    int generation_idx;         // 自动反向传播的顺序不是随意的，需要根据张量的 generation_idx 来定, generation_idx 表示这个张量是第几代张量，定义为通过运算生成这个张量的所有张量的最大 generation_idx 再加 1
 } Tensor;
 
 
