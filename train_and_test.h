@@ -40,7 +40,8 @@ void fb_once(int need_backward, dtype lr, Tensor *inputs, Tensor *targets, Tenso
     if (need_backward) {
         set_grad_to_1s(loss);       // take the derivative with respect to loss itself (dloss/dloss = 1). unless this was done in the loss function, but if so, step 4 can not go before calling backward().
 
-        // TODO: 按照 generation_idx 排序 num_inter_vars, 再按相反的顺序 backward
+        // auto grad
+        qsort(inter_vars, num_inter_vars, sizeof(Tensor *), compare_tensor);
         for (int i = num_inter_vars - 1; i >= 0; i--) {
             inter_vars[i]->backward(inter_vars[i]);
         }

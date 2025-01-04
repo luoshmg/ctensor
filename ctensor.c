@@ -1362,3 +1362,8 @@ double box_muller(double mu, double sigma) {
         }
     }
 }
+
+// 根据张量的 genneration_idx 排序张量
+int compare_tensor(const void *a, const void *b) {
+    return (*((Tensor **) a))->generation_idx - (*((Tensor **) b))->generation_idx;
+}

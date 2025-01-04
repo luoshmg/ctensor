@@ -1,7 +1,6 @@
 // TODO:  # 20250102
-// 2. Layer "class" and backward "method" for auto-grad (ML framework)
 // 3. parallel computing for matrix, e.g. OpenMP
-// 4. save and load Tensor/Arr
+// 4. better saver and loader for Tensor/Arr
 
 
 // ============================================================================
@@ -212,3 +211,4 @@ void random_init(Arr *a, double mu, double sigma);
 
 int argmax_match_count(Tensor *ys, Tensor *targets);
 
+int compare_tensor(const void *a, const void *b);
